@@ -34,6 +34,8 @@ interface BriefInputProps {
   onClearAllResearch: () => void
   onAddResearchDocument: (doc: ResearchDocument) => void
   onRemoveResearchDocument: (docId: string) => void
+  includeResearch: boolean
+  onIncludeResearchChange: (value: boolean) => void
 }
 
 export function BriefInput({
@@ -48,11 +50,12 @@ export function BriefInput({
   onClearAllResearch,
   onAddResearchDocument,
   onRemoveResearchDocument,
+  includeResearch,
+  onIncludeResearchChange,
 }: BriefInputProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
   const [showResearch, setShowResearch] = useState(false)
-  const [includeResearch, setIncludeResearch] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -209,7 +212,7 @@ Our cardiovascular therapy is launching in Q3 2025. Key competitors include Card
                 <Switch
                   id="include-research"
                   checked={includeResearch}
-                  onCheckedChange={setIncludeResearch}
+                  onCheckedChange={onIncludeResearchChange}
                 />
                 <Label htmlFor="include-research" className="text-sm cursor-pointer">
                   Include in analysis

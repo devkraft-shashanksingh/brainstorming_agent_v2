@@ -42,6 +42,7 @@ export default function BrainstormAgent() {
     SAMPLE_RESEARCH_DOCUMENTS
   )
   const [selectedResearch, setSelectedResearch] = useState<string[]>([])
+  const [includeResearch, setIncludeResearch] = useState(false)
 
   // Load formats from localStorage on mount
   useEffect(() => {
@@ -213,6 +214,8 @@ export default function BrainstormAgent() {
             onChange={setBriefText}
             onGenerate={handleGenerate}
             isLoading={appState === "loading"}
+            includeResearch={includeResearch}
+            onIncludeResearchChange={setIncludeResearch}
             researchDocuments={researchDocuments}
             selectedResearch={selectedResearch}
             onToggleResearch={handleToggleResearch}
