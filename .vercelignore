@@ -1,0 +1,11 @@
+data/
+scripts/
+venv/
+*.ps1
+.git
+.DS_Store
+backend/tests/
+backend/venv/
+backend/data/
+frontend/node_modules/
+frontend/.next/

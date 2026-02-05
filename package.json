@@ -1,0 +1,7 @@
+{
+    "name": "brainstorming-agent-v2",
+    "private": true,
+    "scripts": {
+        "build": "cd frontend && npm install && npm run build"
+    }
+}
