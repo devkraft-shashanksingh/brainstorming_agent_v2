@@ -62,6 +62,7 @@ export interface EvaluationResult {
   failed_non_negotiables: string[]
   recommendation: "proceed" | "revise" | "reject"
   research_references?: ResearchReference[]
+  detected_format_id?: string
 }
 
 // Research Library Types
@@ -73,7 +74,6 @@ export interface ResearchDocument {
   type: ResearchDocumentType
   file_type: "pdf" | "ppt" | "pptx" | "doc" | "docx"
   description: string
-  key_insights: string[]
   uploaded_at: string
   size_kb: number
 }

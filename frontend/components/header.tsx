@@ -1,6 +1,6 @@
 "use client"
 
-import { Beaker, BookOpen, MoreVertical, FileText, Info } from "lucide-react"
+import { Beaker, BookOpen, MoreVertical, FileText, Info, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -17,36 +17,36 @@ interface HeaderProps {
 
 export function Header({ onOpenLibrary }: HeaderProps) {
   return (
-    <header className="border-b border-border bg-card">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Beaker className="h-5 w-5 text-primary-foreground" />
+    <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/85 transition-all duration-300">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-6">
+        <div className="flex items-center gap-6">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/8 border border-primary/20">
+            <Beaker className="h-5 w-5 text-primary" />
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Brainstorm Agent</h1>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-base font-medium text-foreground">Brainstorm Agent</h1>
             <p className="text-xs text-muted-foreground">Pharma Marketing Challenge Generator</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={onOpenLibrary}
-            className="gap-2 bg-transparent"
+            className="gap-2 hidden sm:flex"
           >
             <BookOpen className="h-4 w-4" />
             Format Library
           </Button>
 
-          {/* Discreet settings menu */}
+          {/* Settings menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="h-10 w-10 text-muted-foreground hover:text-foreground"
               >
                 <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">More options</span>
@@ -54,21 +54,27 @@ export function Header({ onOpenLibrary }: HeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href="/explainer" className="flex items-center gap-2 cursor-pointer">
+                <Link href="/explainer" className="flex items-center gap-3 cursor-pointer">
                   <Info className="h-4 w-4" />
                   Product Overview
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/user-stories" className="flex items-center gap-2 cursor-pointer">
+                <Link href="/user-stories" className="flex items-center gap-3 cursor-pointer">
                   <FileText className="h-4 w-4" />
                   User Stories
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/monitoring" className="flex items-center gap-3 cursor-pointer">
+                  <Activity className="h-4 w-4" />
+                  Performance Monitor
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onOpenLibrary}
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-3 cursor-pointer sm:hidden"
               >
                 <BookOpen className="h-4 w-4" />
                 Format Library

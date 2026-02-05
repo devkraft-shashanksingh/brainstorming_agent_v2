@@ -4,34 +4,36 @@ import { FileText, Sparkles, ArrowRight } from "lucide-react"
 
 export function EmptyState() {
   return (
-    <div className="mx-auto max-w-md py-12 text-center">
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-        <FileText className="h-8 w-8 text-primary" />
+    <div className="mx-auto max-w-2xl py-24 text-center space-y-10">
+      <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/8 border border-primary/20">
+        <FileText className="h-12 w-12 text-primary/70" />
       </div>
       
-      <h3 className="text-xl font-semibold text-foreground">
-        Start with your marketing brief
-      </h3>
-      
-      <p className="mt-3 text-muted-foreground">
-        Paste or upload your marketing brief above. Our AI will analyze it against 12 proven challenge formats to generate strategic problem statements.
-      </p>
+      <div className="space-y-5">
+        <h3 className="text-4xl md:text-5xl font-light text-foreground tracking-tight">
+          Start with your marketing brief
+        </h3>
+        
+        <p className="text-lg text-muted-foreground font-light leading-relaxed max-w-xl mx-auto">
+          Paste or upload your marketing brief above. Our AI will analyze it against 12 proven challenge formats to generate strategic problem statements.
+        </p>
+      </div>
 
-      <div className="mt-8 space-y-4">
-        <p className="text-sm font-medium text-foreground">How it works</p>
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-            <FileText className="h-4 w-4" />
+      <div className="pt-8 space-y-8">
+        <p className="text-xs font-light text-muted-foreground uppercase tracking-widest">How it works</p>
+        <div className="flex items-center justify-center gap-4 text-sm flex-wrap">
+          <div className="flex items-center gap-3 rounded-lg bg-muted/40 border border-border/40 px-5 py-3 font-light text-foreground">
+            <FileText className="h-4 w-4 text-primary/70" />
             <span>Brief</span>
           </div>
-          <ArrowRight className="h-4 w-4" />
-          <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-            <Sparkles className="h-4 w-4" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground/60 shrink-0 hidden sm:block" />
+          <div className="flex items-center gap-3 rounded-lg bg-muted/40 border border-border/40 px-5 py-3 font-light text-foreground">
+            <Sparkles className="h-4 w-4 text-primary/70" />
             <span>AI Analysis</span>
           </div>
-          <ArrowRight className="h-4 w-4" />
-          <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-primary">
-            <span>5 Challenges</span>
+          <ArrowRight className="h-4 w-4 text-muted-foreground/60 shrink-0 hidden sm:block" />
+          <div className="flex items-center gap-3 rounded-lg bg-primary/10 border border-primary/30 px-5 py-3 font-light text-primary/80">
+            <span>Challenges</span>
           </div>
         </div>
       </div>

@@ -7,5 +7,3 @@ click>=8.1.0
 rich>=13.0.0
 python-multipart>=0.0.7
 sqlite-utils>=3.30
-sqlalchemy>=2.0.0
-sqlalchemy-utils>=0.41.0

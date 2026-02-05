@@ -1,8 +1,10 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState, useEffect, useRef } from "react"
 import { AlertCircle } from "lucide-react"
 import { Header } from "@/components/header"
+import { useAppStore } from "@/lib/store"
 import { BriefInput } from "@/components/brief-input"
 import { ResultsSection } from "@/components/results-section"
 import { LoadingSkeleton } from "@/components/loading-skeleton"
@@ -14,56 +16,79 @@ import {
   DEFAULT_FORMATS,
   DEFAULT_DIAGNOSTIC_RULES,
   SAMPLE_RESEARCH_DOCUMENTS,
-  SAMPLE_BRIEF,
 } from "@/lib/mock-data"
 import type {
   GenerationResult,
   ChallengeFormat,
   DiagnosticRule,
   ResearchDocument,
+  ChallengeStatement,
 } from "@/lib/types"
+import { API_BASE_URL } from "@/lib/config"
 
 type AppState = "idle" | "loading" | "success" | "error"
 
 // Brainstorm Agent main component
-export default function BrainstormAgent() {
-  // Start with empty brief - users select from brand selector or paste their own
-  const [briefText, setBriefText] = useState("")
-  const [appState, setAppState] = useState<AppState>("idle")
-  const [result, setResult] = useState<GenerationResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+function BrainstormAgentContent() {
+  // Global Store State
+  const {
+    briefText, setBriefText,
+    appStatus, setAppStatus,
+    result, setResult,
+    error, setError,
+    selectedResearch, setSelectedResearch,
+    lastIncludeResearch, setLastIncludeResearch,
+    toggleResearch,
+    reset: resetStore
+  } = useAppStore()
+
+  // Alias for backward compatibility with existing code
+  const appState = appStatus
+  const setAppState = setAppStatus
+
+  // Local State (non-persistent UI state)
   const [isLibraryOpen, setIsLibraryOpen] = useState(false)
   const [formats, setFormats] = useState<ChallengeFormat[]>(DEFAULT_FORMATS)
   const [diagnosticRules, setDiagnosticRules] =
     useState<DiagnosticRule[]>(DEFAULT_DIAGNOSTIC_RULES)
 
-  // Research Library state
-  const [researchDocuments, setResearchDocuments] = useState<ResearchDocument[]>(
-    SAMPLE_RESEARCH_DOCUMENTS
-  )
-  const [selectedResearch, setSelectedResearch] = useState<string[]>([])
-  const [includeResearch, setIncludeResearch] = useState(false)
+  // Research Library (Fetched Data)
+  const [researchDocuments, setResearchDocuments] = useState<ResearchDocument[]>([])
 
-  // Load formats from localStorage on mount
+  // Load initial data on mount
   useEffect(() => {
+    // 1. Load LocalStorage Settings
     const savedFormats = localStorage.getItem("brainstorm-formats")
     const savedRules = localStorage.getItem("brainstorm-rules")
 
     if (savedFormats) {
       try {
         setFormats(JSON.parse(savedFormats))
-      } catch {
-        // Use defaults if parse fails
-      }
+      } catch { }
     }
 
     if (savedRules) {
       try {
         setDiagnosticRules(JSON.parse(savedRules))
-      } catch {
-        // Use defaults if parse fails
+      } catch { }
+    }
+
+    // 2. Fetch Research Documents from Backend
+    const fetchDocuments = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/research-documents`)
+        if (res.ok) {
+          const data = await res.json()
+          setResearchDocuments(data)
+        } else {
+          console.error("Failed to fetch documents:", res.status)
+        }
+      } catch (e) {
+        console.error("Error loading research documents:", e)
       }
     }
+
+    fetchDocuments()
   }, [])
 
   // Save formats to localStorage when updated
@@ -79,11 +104,7 @@ export default function BrainstormAgent() {
 
   // Research library handlers
   const handleToggleResearch = (docId: string) => {
-    setSelectedResearch((prev) =>
-      prev.includes(docId)
-        ? prev.filter((id) => id !== docId)
-        : [...prev, docId]
-    )
+    toggleResearch(docId)
   }
 
   const handleSelectAllResearch = () => {
@@ -100,15 +121,18 @@ export default function BrainstormAgent() {
 
   const handleRemoveResearchDocument = (docId: string) => {
     setResearchDocuments((prev) => prev.filter((d) => d.id !== docId))
-    setSelectedResearch((prev) => prev.filter((id) => id !== docId))
+    const newSelected = selectedResearch.filter((id) => id !== docId)
+    setSelectedResearch(newSelected)
   }
 
   // Use a ref for the timeout to ensure it persists and handles weird closure issues
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleGenerate = async (includeResearch: boolean) => {
+    setLastIncludeResearch(includeResearch)
     setAppState("loading")
     setError(null)
+    setResult(null) // Clear previous result
     console.log("🚀 Starting generation request...")
 
     try {
@@ -124,9 +148,8 @@ export default function BrainstormAgent() {
       }, 120000)
 
       // 2. Make API call
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      console.log(`📡 Sending POST to ${apiUrl}/api/generate-challenge-statements`)
-      const response = await fetch(`${apiUrl}/api/generate-challenge-statements`, {
+      console.log("📡 Sending POST to /api/generate-challenge-statements")
+      const response = await fetch(`${API_BASE_URL}/api/generate-challenge-statements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,8 +168,6 @@ export default function BrainstormAgent() {
         timeoutRef.current = null
       }
 
-      console.log(`📥 Response status: ${response.status}`)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         console.error("❌ API Error:", errorData)
@@ -155,18 +176,77 @@ export default function BrainstormAgent() {
         )
       }
 
-      const data = await response.json()
-      console.log("✅ Data received:", data)
-
-      // 4. Update state with transformed results
-      const result = {
-        challenge_statements: data.challenge_statements,
-        diagnostic_summary: data.diagnostic_summary,
-        diagnostic_path: data.diagnostic_path
+      if (!response.body) {
+        throw new Error("Response body is empty")
       }
 
-      setResult(result)
-      setAppState("success")
+      // 4. Handle Streaming Response
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      // Initialize result shell so we can start populating
+      let currentResult: GenerationResult = {
+        challenge_statements: [],
+        diagnostic_summary: "",
+        diagnostic_path: []
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        // Split by double newline (SSE standard separator for events)
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() || "" // Keep incomplete part
+
+        for (const part of parts) {
+          if (part.startsWith('data: ')) {
+            const jsonStr = part.slice(6).trim()
+            if (!jsonStr) continue
+
+            try {
+              const event = JSON.parse(jsonStr)
+              console.log("📨 Stream event:", event.type)
+
+              if (event.type === 'diagnostic') {
+                // Diagnostic complete - show streaming UI immediately
+                currentResult = {
+                  ...currentResult,
+                  diagnostic_summary: event.data.diagnostic_summary,
+                  diagnostic_path: event.data.diagnostic_path
+                }
+                setResult({ ...currentResult })
+                setAppState("success") // Switch to success view to show partial results
+              }
+              else if (event.type === 'challenge_result') {
+                // New statement arrived
+                const newStatement = event.data as ChallengeStatement
+
+                // Add to list and sort by position/id
+                const newStatements = [...currentResult.challenge_statements, newStatement]
+                  .sort((a, b) => a.id - b.id)
+
+                currentResult = {
+                  ...currentResult,
+                  challenge_statements: newStatements
+                }
+                setResult({ ...currentResult }) // Force re-render
+              }
+              else if (event.type === 'error') {
+                throw new Error(event.message)
+              }
+              else if (event.type === 'complete') {
+                console.log("✅ Stream complete")
+              }
+            } catch (e) {
+              console.error("Error parsing stream chunk", e)
+            }
+          }
+        }
+      }
+
     } catch (err) {
       // Ensure timeout is cleared on error too
       if (timeoutRef.current) {
@@ -191,22 +271,19 @@ export default function BrainstormAgent() {
   }
 
   const handleReset = () => {
-    setBriefText("")
-    setResult(null)
-    setAppState("idle")
-    setError(null)
+    resetStore()
   }
 
   const handleRetry = () => {
     setError(null)
-    handleGenerate(includeResearch)
+    handleGenerate(lastIncludeResearch)
   }
 
   return (
     <div className="min-h-screen bg-background">
       <Header onOpenLibrary={() => setIsLibraryOpen(true)} />
 
-      <main className="mx-auto max-w-3xl px-6 py-8 md:py-12">
+      <main className="mx-auto max-w-5xl px-8 py-16 md:py-20 lg:px-8">
         {/* Input Section - Always visible when not in success state */}
         {appState !== "success" && (
           <BriefInput
@@ -214,8 +291,6 @@ export default function BrainstormAgent() {
             onChange={setBriefText}
             onGenerate={handleGenerate}
             isLoading={appState === "loading"}
-            includeResearch={includeResearch}
-            onIncludeResearchChange={setIncludeResearch}
             researchDocuments={researchDocuments}
             selectedResearch={selectedResearch}
             onToggleResearch={handleToggleResearch}
@@ -257,6 +332,8 @@ export default function BrainstormAgent() {
             result={result}
             formats={formats}
             onReset={handleReset}
+            briefText={briefText}
+            includeResearch={lastIncludeResearch}
           />
         )}
       </main>
@@ -273,3 +350,7 @@ export default function BrainstormAgent() {
     </div>
   )
 }
+
+
+const BrainstormAgent = dynamic(() => Promise.resolve(BrainstormAgentContent), { ssr: false })
+export default BrainstormAgent
